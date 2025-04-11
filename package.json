@@ -1,6 +1,30 @@
 {
+  "name": "hospital-management-system",
+  "version": "1.0.0",
+  "description": "Hospital Management System with CDSS",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "cd frontend && npm start",
+    "install:all": "npm install && cd frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "postbuild": "mv frontend/build .",
+    "test": "cd frontend && npm test"
+  },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.10",
-    "react-router-dom": "^7.5.0"
+    "assert": "^2.1.0",
+    "browserify-zlib": "^0.2.0",
+    "crypto-browserify": "^3.12.1",
+    "express": "^4.18.2",
+    "https-browserify": "^1.0.0",
+    "path": "^0.12.7",
+    "react-router-dom": "^7.5.0",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "url": "^0.11.4",
+    "util": "^0.12.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
