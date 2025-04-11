@@ -1,50 +1,82 @@
 import React, { useState } from 'react';
+import { format, isEqual, parseISO } from 'date-fns';
 
 function AppointmentCalendar({ appointments = [] }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // Format date for display
   const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
+    return format(date, 'yyyy-MM-dd');
   };
 
+  // Filter appointments for selected date
   const getAppointmentsForDate = (date) => {
-    return appointments.filter(apt => {
-      const aptDate = new Date(apt.date);
-      return aptDate.toDateString() === date.toDateString();
+    return appointments.filter((appointment) => {
+      const appointmentDate = parseISO(appointment.date);
+      return isEqual(
+        new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+        new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate())
+      );
     });
   };
 
-  const todayAppointments = getAppointmentsForDate(selectedDate);
+  const todaysAppointments = getAppointmentsForDate(selectedDate);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">Appointments</h2>
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="mb-4">
+        <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+          Select Date
+        </label>
         <input
           type="date"
-          value={selectedDate.toISOString().split('T')[0]}
+          id="date"
+          value={formatDate(selectedDate)}
           onChange={(e) => setSelectedDate(new Date(e.target.value))}
-          className="p-2 border rounded"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
       </div>
 
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="font-medium mb-2">{formatDate(selectedDate)}</h3>
-        {todayAppointments.length > 0 ? (
-          <ul className="space-y-2">
-            {todayAppointments.map((apt, index) => (
-              <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="font-medium">{apt.patientName}</span>
-                <span className="text-gray-600">{apt.time}</span>
+      <div className="mt-6">
+        <h3 className="text-lg font-medium text-gray-900">
+          Appointments for {format(selectedDate, 'MMMM d, yyyy')}
+        </h3>
+        {todaysAppointments.length === 0 ? (
+          <p className="mt-2 text-gray-500">No appointments scheduled for this date.</p>
+        ) : (
+          <ul className="mt-4 space-y-4">
+            {todaysAppointments.map((appointment) => (
+              <li
+                key={appointment.id}
+                className="bg-gray-50 p-4 rounded-md border border-gray-200"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-base font-medium text-gray-900">
+                      {appointment.patientName}
+                    </h4>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Time: {format(parseISO(appointment.date), 'h:mm a')}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Purpose: {appointment.purpose}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded ${
+                      appointment.status === 'confirmed'
+                        ? 'bg-green-100 text-green-800'
+                        : appointment.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {appointment.status}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
-        ) : (
-          <p className="text-gray-500">No appointments scheduled for this date</p>
         )}
       </div>
     </div>

@@ -7,7 +7,7 @@
     "dev": "cd frontend && npm start",
     "install:all": "npm install && cd frontend && npm install",
     "build": "cd frontend && npm run build",
-    "postbuild": "mv frontend/build .",
+    "postbuild": "move frontend\\build .",
     "test": "cd frontend && npm test"
   },
   "dependencies": {
