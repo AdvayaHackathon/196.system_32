@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 function CDSSPanel({ patient }) {
   const [symptoms, setSymptoms] = useState('');
@@ -10,11 +9,19 @@ function CDSSPanel({ patient }) {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('/api/cdss/diagnose', {
-        patientId: patient.id,
-        symptoms: symptoms.split(',').map(s => s.trim())
+      // Simulated API call
+      const response = await fetch('/api/cdss/diagnose', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: patient.id,
+          symptoms: symptoms.split(',').map(s => s.trim())
+        }),
       });
-      setDiagnosis(response.data);
+      const data = await response.json();
+      setDiagnosis(data);
     } catch (error) {
       console.error('CDSS Error:', error);
     }
@@ -34,7 +41,7 @@ function CDSSPanel({ patient }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-primary-600 text-white py-2 rounded hover:bg-primary-700"
+          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
         >
           {loading ? 'Analyzing...' : 'Get Diagnosis'}
         </button>
@@ -42,10 +49,12 @@ function CDSSPanel({ patient }) {
 
       {diagnosis && (
         <div className="bg-white p-4 rounded shadow">
-          <h3 className="font-medium mb-2">Diagnosis:</h3>
+          <h3 className="font-medium mb-2">Diagnosis Results:</h3>
           <ul className="list-disc list-inside">
             {diagnosis.conditions.map((condition, index) => (
-              <li key={index}>{condition.name} ({condition.confidence}%)</li>
+              <li key={index} className="text-gray-700">
+                {condition.name} ({condition.confidence}%)
+              </li>
             ))}
           </ul>
         </div>

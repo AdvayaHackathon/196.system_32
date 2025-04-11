@@ -1,70 +1,50 @@
 import React, { useState } from 'react';
-import { format, startOfDay, endOfDay } from 'date-fns';
 
-function AppointmentCalendar({ appointments, onAppointmentSelect }) {
+function AppointmentCalendar({ appointments = [] }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const filteredAppointments = appointments.filter(appointment => {
-    const appointmentDate = new Date(appointment.date);
-    return (
-      appointmentDate >= startOfDay(selectedDate) &&
-      appointmentDate <= endOfDay(selectedDate)
-    );
-  });
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getAppointmentsForDate = (date) => {
+    return appointments.filter(apt => {
+      const aptDate = new Date(apt.date);
+      return aptDate.toDateString() === date.toDateString();
+    });
+  };
+
+  const todayAppointments = getAppointmentsForDate(selectedDate);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">
-          {format(selectedDate, 'MMMM d, yyyy')}
-        </h3>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setSelectedDate(new Date())}
-            className="px-3 py-1 text-sm bg-gray-100 rounded-md hover:bg-gray-200"
-          >
-            Today
-          </button>
-        </div>
+        <h2 className="text-lg font-medium">Appointments</h2>
+        <input
+          type="date"
+          value={selectedDate.toISOString().split('T')[0]}
+          onChange={(e) => setSelectedDate(new Date(e.target.value))}
+          className="p-2 border rounded"
+        />
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200">
-        {filteredAppointments.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">
-            No appointments scheduled for this day
-          </div>
-        ) : (
-          <ul className="divide-y divide-gray-200">
-            {filteredAppointments.map((appointment) => (
-              <li
-                key={appointment.id}
-                className="p-4 hover:bg-gray-50 cursor-pointer"
-                onClick={() => onAppointmentSelect(appointment.patient)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {appointment.patientName}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(appointment.date), 'h:mm a')}
-                    </p>
-                  </div>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      appointment.status === 'confirmed'
-                        ? 'bg-green-100 text-green-800'
-                        : appointment.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {appointment.status}
-                  </span>
-                </div>
+      <div className="bg-white p-4 rounded shadow">
+        <h3 className="font-medium mb-2">{formatDate(selectedDate)}</h3>
+        {todayAppointments.length > 0 ? (
+          <ul className="space-y-2">
+            {todayAppointments.map((apt, index) => (
+              <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span className="font-medium">{apt.patientName}</span>
+                <span className="text-gray-600">{apt.time}</span>
               </li>
             ))}
           </ul>
+        ) : (
+          <p className="text-gray-500">No appointments scheduled for this date</p>
         )}
       </div>
     </div>

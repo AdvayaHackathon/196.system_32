@@ -1,37 +1,49 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { auth } from '../firebase/config';
 
-const AuthContext = createContext();
-
-export function useAuth() {
-  return useContext(AuthContext);
-}
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      setCurrentUser(user);
-      setLoading(false);
-      
-      // Fetch user role from your backend or Firestore
-      if (user) {
-        // TODO: Implement role fetching from backend
-        // This is a placeholder - replace with actual role fetching logic
-        setUserRole('patient'); // or 'doctor' based on actual user data
-      }
-    });
-
-    return unsubscribe;
+    // Check for stored user session
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
+  const login = async (email, password) => {
+    try {
+      // Here you would typically make an API call to authenticate
+      // For now, we'll simulate a successful login
+      const mockUser = {
+        id: 1,
+        name: 'Dr. Smith',
+        email: email,
+        role: 'doctor'
+      };
+      setUser(mockUser);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+  };
+
   const value = {
-    currentUser,
-    userRole,
-    loading
+    user,
+    loading,
+    login,
+    logout
   };
 
   return (
@@ -39,4 +51,8 @@ export function AuthProvider({ children }) {
       {!loading && children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 } 
