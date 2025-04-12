@@ -1,6 +1,6 @@
 {
-  "short_name": "Hospital App",
-  "name": "Hospital Management System",
+  "short_name": "CareLink",
+  "name": "CareLink Hospital Management System",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +20,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#6366f1",
   "background_color": "#ffffff"
 } 

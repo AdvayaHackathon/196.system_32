@@ -8,22 +8,22 @@ import PatientDashboard from './components/dashboard/PatientDashboard';
 import AppointmentCalendar from './components/dashboard/AppointmentCalendar';
 import MedicalRecords from './components/MedicalRecords/MedicalRecords';
 import Prescriptions from './components/Prescriptions/Prescriptions';
-import { AuthProvider } from './context/AuthContext';
-import { useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-  return children;
+  // Temporarily bypassing authentication
+  return (
+    <>
+      <Navigation />
+      {children}
+    </>
+  );
 };
 
 function App() {
-  // Appointments state moved inside the component
   const [appointments, setAppointments] = useState([
     {
       id: 1,
@@ -58,28 +58,81 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="min-h-screen bg-gray-100">
-          <Navigation />
-          <main className="container mx-auto px-4 py-8">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <main className="container mx-auto px-4 py-8">
                     <Dashboard appointments={appointments} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/" element={<Navigate to="/login" />} />
-              <Route path="/doctor-dashboard" element={<DoctorDashboard appointments={appointments} />} />
-              <Route path="/patient-dashboard" element={<PatientDashboard />} />
-              <Route path="/appointments" element={<AppointmentCalendar />} />
-              <Route path="/patients" element={<PatientsPage appointments={appointments} setAppointments={setAppointments} />} />
-              <Route path="/medical-records" element={<MedicalRecords />} />
-              <Route path="/prescriptions" element={<Prescriptions />} />
-            </Routes>
-          </main>
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/doctor-dashboard"
+              element={
+                <ProtectedRoute>
+                  <main className="container mx-auto px-4 py-8">
+                    <DoctorDashboard appointments={appointments} />
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/patient-dashboard"
+              element={
+                <ProtectedRoute>
+                  <main className="container mx-auto px-4 py-8">
+                    <PatientDashboard />
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments"
+              element={
+                <ProtectedRoute>
+                  <main className="container mx-auto px-4 py-8">
+                    <AppointmentCalendar />
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/patients"
+              element={
+                <ProtectedRoute>
+                  <main className="container mx-auto px-4 py-8">
+                    <PatientsPage appointments={appointments} setAppointments={setAppointments} />
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/medical-records"
+              element={
+                <ProtectedRoute>
+                  <main className="container mx-auto px-4 py-8">
+                    <MedicalRecords />
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/prescriptions"
+              element={
+                <ProtectedRoute>
+                  <main className="container mx-auto px-4 py-8">
+                    <Prescriptions />
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/login" />} />
+          </Routes>
         </div>
       </Router>
     </AuthProvider>
