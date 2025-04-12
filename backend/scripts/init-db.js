@@ -1,82 +1,92 @@
+require('dotenv').config({ path: '../.env' });
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const fs = require('fs').promises;
+const path = require('path');
+const bcrypt = require('bcrypt');
+
+const SALT_ROUNDS = 10;
 
 async function initializeDatabase() {
-  let connection;
-  try {
-    // Create connection to MySQL server
-    connection = await mysql.createConnection({
-      host: process.env.AZURE_DB_HOST,
-      user: process.env.AZURE_DB_USER,
-      password: process.env.AZURE_DB_PASSWORD
-    });
+    try {
+        // Create connection without database selection
+        const connection = await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD
+        });
 
-    console.log('Connected to MySQL server');
+        console.log('Connected to MySQL server');
 
-    // Create database if it doesn't exist
-    await connection.query(`CREATE DATABASE IF NOT EXISTS ${process.env.AZURE_DB_NAME}`);
-    console.log(`Database ${process.env.AZURE_DB_NAME} created or already exists`);
+        // Create database if it doesn't exist
+        await connection.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`);
+        console.log(`Database ${process.env.DB_NAME} created or already exists`);
 
-    // Switch to the database
-    await connection.query(`USE ${process.env.AZURE_DB_NAME}`);
+        // Use the database
+        await connection.query(`USE ${process.env.DB_NAME}`);
 
-    // Read and execute schema.sql
-    const fs = require('fs');
-    const path = require('path');
-    const schema = fs.readFileSync(path.join(__dirname, '../../database/schema.sql'), 'utf8');
-    
-    // Split the schema into individual statements
-    const statements = schema.split(';').filter(statement => statement.trim());
-    
-    // Execute each statement
-    for (const statement of statements) {
-      if (statement.trim()) {
-        await connection.query(statement);
-      }
+        // Read and execute schema.sql
+        const schemaPath = path.join(__dirname, '../../database/schema.sql');
+        const schema = await fs.readFile(schemaPath, 'utf8');
+        const statements = schema.split(';').filter(stmt => stmt.trim());
+        
+        for (const statement of statements) {
+            if (statement.trim()) {
+                await connection.query(statement);
+            }
+        }
+        console.log('Schema created successfully');
+
+        // Generate hashed passwords for demo users
+        const adminPassword = await bcrypt.hash('admin123', SALT_ROUNDS);
+        const doctorPassword = await bcrypt.hash('doctor123', SALT_ROUNDS);
+        const patientPassword = await bcrypt.hash('patient123', SALT_ROUNDS);
+
+        // Insert demo users
+        await connection.query(`
+            INSERT INTO Users (user_id, email, password_hash, role, created_at, last_login) VALUES
+            (UUID(), 'admin@carelink.com', ?, 'admin', NOW(), NOW()),
+            (UUID(), 'doctor@carelink.com', ?, 'doctor', NOW(), NOW()),
+            (UUID(), 'patient@carelink.com', ?, 'patient', NOW(), NOW())
+        `, [adminPassword, doctorPassword, patientPassword]);
+
+        // Get the user IDs for the demo users
+        const [users] = await connection.query(`
+            SELECT user_id, email, role FROM Users 
+            WHERE email IN ('admin@carelink.com', 'doctor@carelink.com', 'patient@carelink.com')
+        `);
+
+        // Create user profiles
+        for (const user of users) {
+            await connection.query(`
+                INSERT INTO UserProfiles (user_id, first_name, last_name, phone_number)
+                VALUES (?, ?, ?, ?)
+            `, [user.user_id, 'Demo', user.role.charAt(0).toUpperCase() + user.role.slice(1), '1234567890']);
+
+            // Create doctor profile for the doctor user
+            if (user.role === 'doctor') {
+                await connection.query(`
+                    INSERT INTO Doctors (user_id, specialization, consultation_fee, years_of_experience)
+                    VALUES (?, 'General Medicine', 100.00, 5)
+                `, [user.user_id]);
+            }
+
+            // Create patient profile for the patient user
+            if (user.role === 'patient') {
+                await connection.query(`
+                    INSERT INTO Patients (user_id, date_of_birth, blood_type, emergency_contact)
+                    VALUES (?, '1990-01-01', 'O+', '9876543210')
+                `, [user.user_id]);
+            }
+        }
+
+        console.log('Demo data inserted successfully');
+        await connection.end();
+        console.log('Database initialization completed successfully');
+
+    } catch (error) {
+        console.error('Error initializing database:', error);
+        process.exit(1);
     }
-
-    console.log('Database schema initialized successfully');
-
-    // Insert some initial data
-    const initialData = [
-      {
-        email: 'admin@hospital.com',
-        password: '$2a$10$X7J3Q5H8Y9Z0A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z',
-        userType: 'admin',
-        firstName: 'Admin',
-        lastName: 'User'
-      },
-      {
-        email: 'doctor@hospital.com',
-        password: '$2a$10$X7J3Q5H8Y9Z0A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z',
-        userType: 'doctor',
-        firstName: 'John',
-        lastName: 'Smith'
-      }
-    ];
-
-    for (const user of initialData) {
-      const [result] = await connection.query(
-        'INSERT INTO Users (user_id, email, password_hash, user_type) VALUES (UUID(), ?, ?, ?)',
-        [user.email, user.password, user.userType]
-      );
-
-      await connection.query(
-        'INSERT INTO UserProfiles (profile_id, user_id, first_name, last_name) VALUES (UUID(), LAST_INSERT_ID(), ?, ?)',
-        [user.firstName, user.lastName]
-      );
-    }
-
-    console.log('Initial data inserted successfully');
-
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  } finally {
-    if (connection) {
-      await connection.end();
-      console.log('Database connection closed');
-    }
-  }
 }
 
 initializeDatabase(); 

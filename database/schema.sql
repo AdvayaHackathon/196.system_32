@@ -137,4 +137,18 @@ CREATE TABLE AuditLog (
     changes JSON,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS appointment_requests (
+    id VARCHAR(36) PRIMARY KEY,
+    patient_id VARCHAR(36) NOT NULL,
+    doctor_id VARCHAR(36) NOT NULL,
+    requested_date DATETIME NOT NULL,
+    reason TEXT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    doctor_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP NULL,
+    FOREIGN KEY (patient_id) REFERENCES users(id),
+    FOREIGN KEY (doctor_id) REFERENCES users(id)
 ); 

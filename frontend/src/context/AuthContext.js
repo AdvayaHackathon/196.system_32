@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import config from '../config';
 
 const AuthContext = createContext();
 
@@ -16,44 +16,62 @@ export const AuthProvider = ({ children }) => {
     const userData = localStorage.getItem('user');
     
     if (token && userData) {
-      setUser(JSON.parse(userData));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      try {
+        setUser(JSON.parse(userData));
+      } catch (err) {
+        console.error('Error parsing stored user data:', err);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (token, userData) => {
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', {
-        email,
-        password
-      });
-
-      const { token, user } = response.data;
+      if (!token || !userData) {
+        throw new Error('Invalid login response');
+      }
+      
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
       setError(null);
-      return user;
+      return userData;
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed');
       throw err;
     }
   };
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/register', userData);
-      const { token, user } = response.data;
+      const response = await fetch(`${config.apiUrl}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Registration failed');
+      }
+
+      const data = await response.json();
+      const { token, user } = data;
+      
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
       setError(null);
       return user;
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed');
+      console.error('Registration error:', err);
+      setError(err.message || 'Registration failed');
       throw err;
     }
   };
@@ -61,8 +79,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
+    setError(null);
   };
 
   const value = {
