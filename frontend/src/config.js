@@ -3,7 +3,7 @@ const isDevelopment = window.location.hostname === 'localhost';
 const config = {
   apiUrl: isDevelopment 
     ? 'http://localhost:5000'
-    : 'https://carelink3-backend.azurewebsites.net',
+    : 'https://carelink3.azurewebsites.net',
   auth: {
     loginEndpoint: '/api/auth/login',
     registerEndpoint: '/api/auth/register'
